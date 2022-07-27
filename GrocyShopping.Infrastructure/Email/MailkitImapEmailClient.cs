@@ -39,7 +39,7 @@ public class MailkitImapEmailClient : IEmailClient
         foreach (var uid in foundUids)
         {
             var message = await client.Inbox.GetMessageAsync(uid);
-            var email = new Email(message.Sender.Address, message.Subject, message.HtmlBody,
+            var email = new Email(message.From[0].Name, message.Subject, message.HtmlBody,
                 message.Date.DateTime);
             foundEmails.Add(email);
         }
