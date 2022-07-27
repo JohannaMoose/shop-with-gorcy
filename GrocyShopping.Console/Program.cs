@@ -22,7 +22,7 @@ var allCitygrossOrderEmails = await emailClient.GetAllEmailsFrom("noreply@citygr
 
 var boughtProducts = new List<BoughtProduct>();
 var orderParser = new CitygrossOnlineOrderParser();
-foreach (var orderEmail in allCitygrossOrderEmails)
+foreach (var orderEmail in allCitygrossOrderEmails.Where(x => x.Title == "Orderbekräftelse"))
 {
     var products = orderParser.ParseOnlineOrder(orderEmail.Body);
     var newProducts = products.Where(x => !boughtProducts.Any(e => e.Name == x.Name && e.Brand == x.Brand));
