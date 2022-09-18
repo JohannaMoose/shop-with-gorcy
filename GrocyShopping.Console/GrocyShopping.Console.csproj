@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Grocy.RestAPI\Grocy.RestAPI.csproj" />
     <ProjectReference Include="..\GrocyShopping.Citygross.Receipt\GrocyShopping.Citygross.csproj" />
     <ProjectReference Include="..\GrocyShopping.Infrastructure\GrocyShopping.Infrastructure.csproj" />
   </ItemGroup>
