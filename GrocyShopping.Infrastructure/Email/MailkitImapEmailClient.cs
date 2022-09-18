@@ -36,14 +36,14 @@ public class MailkitImapEmailClient : IEmailClient
         return GetAllEmailsFromFolder(archiveFolder, sender);
     }
 
-    private async Task<IReadOnlyList<Email>> GetAllEmailsFromFolder(IMailFolder folder, string sender)
+    private static async Task<IReadOnlyList<Email>> GetAllEmailsFromFolder(IMailFolder folder, string sender)
     {
-        _client.Inbox.Open(FolderAccess.ReadOnly);
+        folder.Open(FolderAccess.ReadOnly);
         var foundUids = await folder.SearchAsync(SearchQuery.FromContains(sender));
         var foundEmails = new List<Email>();
         foreach (var uid in foundUids)
         {
-            var message = await _client.Inbox.GetMessageAsync(uid);
+            var message = await folder.GetMessageAsync(uid);
             var email = new Email(message.From[0].Name, message.Subject, message.HtmlBody,
                 message.Date.DateTime);
             foundEmails.Add(email);
