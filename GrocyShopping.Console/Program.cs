@@ -3,6 +3,9 @@
 using GrocyShopping.Citygross;
 using GrocyShopping.Infrastructure.Email;
 
+const string citygrossOrderEmailAddress = "noreply@citygross.se";
+
+
 string[] GetEmailInfo()
 {
     Console.Write("Please provide your email host, port, username and password, in that order: ");
@@ -18,18 +21,33 @@ while (emailInfo == null)
 }
 
 var emailClient = new MailkitImapEmailClient(emailInfo[0], Convert.ToInt32(emailInfo[1]), false, emailInfo[2], emailInfo[3]);
-var allCitygrossOrderEmails = await emailClient.GetAllEmailsFrom("noreply@citygross.se");
+var allCitygrossOrderEmails = await emailClient.GetAllEmailsFrom(citygrossOrderEmailAddress);
 
-var boughtProducts = new List<BoughtProduct>();
 var orderParser = new CitygrossOnlineOrderParser();
-foreach (var orderEmail in allCitygrossOrderEmails.Where(x => x.Title == "Orderbekräftelse"))
+var boughtProducts = new List<BoughtProduct>();
+
+ProcessEmails(allCitygrossOrderEmails);
+
+Console.Write("Do you want to search through the email archive as well? (y/N): ");
+var searchArchive = Console.ReadLine();
+
+if (searchArchive != null && searchArchive.ToLower() == "y")
 {
-    var products = orderParser.ParseOnlineOrder(orderEmail.Body);
-    var newProducts = products.Where(x => !boughtProducts.Any(e => e.Name == x.Name && e.Brand == x.Brand));
-    boughtProducts.AddRange(newProducts);
+    var archivedCitygrossOrderEmails = await emailClient.GetAllEmailsFromArchiveSentBy(citygrossOrderEmailAddress);
+    ProcessEmails(archivedCitygrossOrderEmails);
 }
 
-if (boughtProducts.Any())
+void ProcessEmails(IReadOnlyList<Email> emails)
 {
-    Console.WriteLine($"Found {boughtProducts.Count} products in emails");
+    foreach (var orderEmail in emails.Where(x => x.Title == "Orderbekräftelse"))
+    {
+        var products = orderParser.ParseOnlineOrder(orderEmail.Body);
+        var newProducts = products.Where(x => !boughtProducts.Any(e => e.Name == x.Name && e.Brand == x.Brand));
+        boughtProducts.AddRange(newProducts);
+    }
+
+    if (boughtProducts.Any())
+    {
+        Console.WriteLine($"Found {boughtProducts.Count} products in emails");
+    }
 }
