@@ -12,6 +12,7 @@ public class MailkitImapEmailClient : IEmailClient
     private readonly bool _useSsl;
     private readonly string _username;
     private readonly string _password;
+    private ImapClient _client;
 
     public MailkitImapEmailClient(string server, int port, bool useSsl, string username, string password)
     {
@@ -24,26 +25,43 @@ public class MailkitImapEmailClient : IEmailClient
 
     public async Task<IReadOnlyList<Email>> GetAllEmailsFrom(string sender)
     {
-        using var client = new ImapClient();
-        var socketOptions = SecureSocketOptions.None;
-        if (_useSsl)
-            socketOptions = SecureSocketOptions.SslOnConnect;
+         SetupClient();
+         return await GetAllEmailsFromFolder(_client.Inbox, sender);
+    }
 
-        client.Connect(_server, _port, socketOptions);
-        client.Authenticate(_username, _password);
-        client.Inbox.Open(FolderAccess.ReadOnly);
+    public Task<IReadOnlyList<Email>> GetAllEmailsFromArchiveSentBy(string sender)
+    {
+        SetupClient();
+        var archiveFolder = _client.GetFolder(SpecialFolder.Archive);
+        return GetAllEmailsFromFolder(archiveFolder, sender);
+    }
 
-        var foundUids = await client.Inbox.SearchAsync(SearchQuery.FromContains(sender));
-
+    private async Task<IReadOnlyList<Email>> GetAllEmailsFromFolder(IMailFolder folder, string sender)
+    {
+        _client.Inbox.Open(FolderAccess.ReadOnly);
+        var foundUids = await folder.SearchAsync(SearchQuery.FromContains(sender));
         var foundEmails = new List<Email>();
         foreach (var uid in foundUids)
         {
-            var message = await client.Inbox.GetMessageAsync(uid);
+            var message = await _client.Inbox.GetMessageAsync(uid);
             var email = new Email(message.From[0].Name, message.Subject, message.HtmlBody,
                 message.Date.DateTime);
             foundEmails.Add(email);
         }
 
-        return foundEmails; 
+        return foundEmails;
     }
+
+    private void SetupClient()
+    {
+        _client = new ImapClient();
+        var socketOptions = SecureSocketOptions.None;
+        if (_useSsl)
+            socketOptions = SecureSocketOptions.SslOnConnect;
+
+        _client.Connect(_server, _port, socketOptions);
+        _client.Authenticate(_username, _password);
+    }
+
+  
 }
