@@ -11,9 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrocyShopping.Citygross", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrocyShopping.Tests", "GrocyShopping.Tests\GrocyShopping.Tests.csproj", "{60908618-6B8B-4F37-B83F-EDE3A3D85534}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrocyShopping.Console", "GrocyShopping.Console\GrocyShopping.Console.csproj", "{B00D815E-F394-417E-AABD-D3635532F2EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GrocyShopping.Console", "GrocyShopping.Console\GrocyShopping.Console.csproj", "{B00D815E-F394-417E-AABD-D3635532F2EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grocy.RestAPI", "Grocy.RestAPI\Grocy.RestAPI.csproj", "{D0559F48-0E80-401C-8C19-964AA1100E75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grocy.RestAPI", "Grocy.RestAPI\Grocy.RestAPI.csproj", "{D0559F48-0E80-401C-8C19-964AA1100E75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

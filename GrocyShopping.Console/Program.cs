@@ -53,6 +53,7 @@ var allUnits = await unitsApi.Get();
 var unitAbbreviations = allUnits.Select(x => x.UserFields["abbreviation"]);
 
 var productApi = new ProductsApi(http, url);
+var unitConversion = new QuantityConversionApi(http, url);
 foreach (var boughtProduct in boughtProducts)
 {
     var existingProductsMatching =
@@ -85,9 +86,25 @@ foreach (var boughtProduct in boughtProducts)
             product = productsMatching.Single(x => !x.UserFields.ContainsKey("brand"));
         }
     }
-
     var amount = boughtProduct.ProductAmount.Substring(0, boughtProduct.ProductAmount.Length - abrv.Length).Trim();
     var amountToAdd = Convert.ToDouble(amount);
+
+    if (product.Qa_Id_Stock != unit.Id)
+    {
+        var foundConversions = await unitConversion.Get(new[]
+        {
+            new QueryFilter("product_id", QueryCondition.Equals, product.Id),
+            new QueryFilter("from_qu_id", QueryCondition.Equals, unit.Id)
+        });
+
+        var quantityUnitConversions = foundConversions as QuantityUnitConversion[] ?? foundConversions.ToArray();
+        if (quantityUnitConversions.Any())
+        {
+            var converter = quantityUnitConversions.First();
+            amountToAdd = amountToAdd * Convert.ToDouble(converter.Factor);
+        }
+    }
+
     // await productApi.AddToStock(product.Id, boughtProduct.Price, xx, boughtProduct.ProductAmount);
 
     bool ProductWithBrandDoesNotExist()
