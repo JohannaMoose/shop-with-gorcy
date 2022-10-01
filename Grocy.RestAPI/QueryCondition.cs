@@ -2,7 +2,8 @@
 
 public enum QueryCondition
 {
-    Equals
+    Equals,
+    Like
 }
 
 public static class QueryConditionsToString
@@ -12,6 +13,7 @@ public static class QueryConditionsToString
         return condition switch
         {
             QueryCondition.Equals => "=",
+            QueryCondition.Like => "~",
             _ => throw new NotSupportedException("That query condition is not yet supported")
         };
     }

@@ -1,3 +1,3 @@
 ﻿namespace Grocy.RestAPI.Models;
 
-public record QuantityUnit(string Id, string Name, IDictionary<string, string> UserFields);
+public record QuantityUnit(int Id, string Name, IDictionary<string, string> UserFields);

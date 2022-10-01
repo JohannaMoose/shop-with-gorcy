@@ -1,15 +1,20 @@
-﻿using Newtonsoft.Json;
+﻿using Grocy.RestAPI.Json;
+using Newtonsoft.Json;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Net;
 
 namespace Grocy.RestAPI;
 
 public abstract class GrocyApiBase<T>
 {
-    private readonly HttpClient _httpClient;
+    protected readonly HttpClient HttpClient;
     private readonly string _grocyUrl;
 
     protected GrocyApiBase(HttpClient httpClient, string grocyUrl)
     {
-        _httpClient = httpClient;
+        HttpClient = httpClient;
         _grocyUrl = grocyUrl;
 
         if (_grocyUrl.EndsWith("/"))
@@ -35,10 +40,7 @@ public abstract class GrocyApiBase<T>
 
     protected Task<HttpResponseMessage> Get(string url, params QueryFilter[]? filters)
     {
-        if (url.StartsWith("/"))
-            url = _grocyUrl + url;
-        else
-            url = $"{_grocyUrl}/{url}";
+        url = ConstructGrocyUrl(url);
 
         if (filters is { Length: > 0 })
         {
@@ -46,7 +48,46 @@ public abstract class GrocyApiBase<T>
             url += $"?{filterString}";
         }
 
-        return _httpClient.GetAsync(url);
+        return HttpClient.GetAsync(url);
+    }
+
+    protected async Task<HttpResponseMessage> PostToGrocy<TIn>(string uniqUrlPart, TIn objToJson)
+    {
+        var jsonBody = JsonContent.Create(objToJson, null, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = new JsonLowercaseUnderscorePolicy(),
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        });
+        var url = ConstructGrocyUrl(uniqUrlPart);
+
+        try
+        {
+            var msg = new HttpRequestMessage
+            {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(url),
+                Headers = {
+                    { HttpRequestHeader.Accept.ToString(), "application/json" },
+                    { HttpRequestHeader.ContentType.ToString(), "application/json" }},
+                Content = jsonBody
+            };
+            var result = await HttpClient.SendAsync(msg);
+            return result;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    protected string ConstructGrocyUrl(string url)
+    {
+        if (url.StartsWith("/"))
+            url = _grocyUrl + url;
+        else
+            url = $"{_grocyUrl}/{url}";
+        return url;
     }
 
     private static string CreateFilterString(IReadOnlyList<QueryFilter> filters)
