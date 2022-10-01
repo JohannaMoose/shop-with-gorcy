@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Grocy.RestAPI\Grocy.RestAPI.csproj" />
     <ProjectReference Include="..\GrocyShopping.Citygross.Receipt\GrocyShopping.Citygross.csproj" />
     <ProjectReference Include="..\GrocyShopping.Infrastructure\GrocyShopping.Infrastructure.csproj" />
