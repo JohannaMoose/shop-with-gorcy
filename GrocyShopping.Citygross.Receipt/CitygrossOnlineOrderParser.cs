@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Web;
 using HtmlAgilityPack;
 
 namespace GrocyShopping.Citygross;
@@ -26,7 +27,7 @@ public class CitygrossOnlineOrderParser
         var name = productPartsText[0];
         var nbrOfProducts = Convert.ToInt32(productPartsText[1].Replace(" st", "", StringComparison.OrdinalIgnoreCase));
         var price = Convert.ToDouble(productPartsText[3].Replace(" kr", "", StringComparison.OrdinalIgnoreCase));
-        var brand = Regex.Match(productPartsText[2], @"(.*) - ").Groups[1].Value;
+        var brand = HttpUtility.HtmlDecode(Regex.Match(productPartsText[2], @"(.*) - ").Groups[1].Value);
         var rawAmount = Regex.Match(productPartsText[2], @".* - (.*)").Groups[1].Value;
 
         var product = new BoughtProduct(name, brand, price, nbrOfProducts, rawAmount);

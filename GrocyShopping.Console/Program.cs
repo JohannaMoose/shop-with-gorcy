@@ -55,7 +55,7 @@ var http = new HttpClient();
 http.DefaultRequestHeaders.Add("GROCY-API-KEY", apiKey);
 
 Console.Write("Do you want to add the products amounts permanently to Grocy (Y/n)?: ");
-var addPermanently = Console.ReadLine()?.ToLower().Trim() == "n";
+var addPermanently = Console.ReadLine()?.ToLower().Trim() != "n";
 
 var processor = new BoughtProductsProcessor(url, http, log);
 
