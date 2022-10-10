@@ -12,6 +12,7 @@ public class BoughtProductsProcessor
     private ProductsApi productsApi;
     private StockApi stockApi;
     private QuantityManager _quantityManager;
+    private ProductManager _productManager;
 
     public BoughtProductsProcessor(string grocyUrl, HttpClient client, ILogger logger)
     {
@@ -19,6 +20,7 @@ public class BoughtProductsProcessor
         productsApi = new ProductsApi(client, grocyUrl);
         stockApi = new StockApi(client, grocyUrl);
         _quantityManager = new QuantityManager(new QuantityUnitsApi(client, grocyUrl), new QuantityConversionApi(client, grocyUrl),  _logger);
+        _productManager = new ProductManager(productsApi, _quantityManager, _logger);
     }
 
     public async Task Process(IEnumerable<BoughtProduct> boughtProducts, bool addPermanently, int storeId)
@@ -49,7 +51,7 @@ public class BoughtProductsProcessor
         if (!productsMatching.Any())
         {
             _logger.Debug("No matching products found, adding new");
-            product = await AddProduct(boughtProduct, unit);
+            product = await _productManager.AddProduct(boughtProduct, unit);
         }
         else
         {
@@ -72,7 +74,7 @@ public class BoughtProductsProcessor
             else
             {
                 _logger.Debug("No product found matching, adding new one");
-                product = await AddProduct(boughtProduct, unit);
+                product = await _productManager.AddProduct(boughtProduct, unit);
             }
         }
 
@@ -97,37 +99,12 @@ public class BoughtProductsProcessor
 
         var pricePerUnit = boughtProduct.Price / amountToAdd;
 
-        var acceptPrice = AcceptChoice($"Price per unit calculated to {pricePerUnit} kr/{unit.Name}, accept (Y/n)?: ");
+        var acceptPrice = ConsoleProgramHelper.AcceptChoice($"Price per unit calculated to {pricePerUnit} kr/{unit.Name}, accept (Y/n)?: ");
 
         if (!acceptPrice)
             throw new NotImplementedException();
 
         await stockApi.AddAmount(product.Id, amountToAdd, pricePerUnit, shoppingLocationId: storeId);
-    }
-    private async Task<Product> AddProduct(BoughtProduct boughtProduct1, QuantityUnit quantityUnit)
-    {
-        var name = boughtProduct1.Name;
-
-        var accepted = AcceptChoice($"Product name in grocy for new product suggested \"{name}\", accept (Y/n)?: ");
-        if (!accepted)
-        {
-            System.Console.Write("Please enter product name to use: ");
-            System.Console.WriteLine(name);
-            System.Console.SetCursorPosition(name.Length, 0);
-            name = System.Console.ReadLine();
-        }
-
-        accepted = AcceptChoice($"From bought product, unit {quantityUnit.Name} selected, accept (Y/n)?: ");
-        if (!accepted)
-        {
-            quantityUnit = _quantityManager.UserSelectQuantity();
-        }
-
-        var product1 = await productsApi.AddProduct(name, quantityUnit.Id, quantityUnit.Id);
-
-        _logger.Information("Added product {productName} to Grocy", product1.Name);
-
-        return product1;
     }
 
     private QuantityUnit GetQuantityUnit(BoughtProduct boughtProduct)
@@ -138,7 +115,7 @@ public class BoughtProductsProcessor
         while (!accept)
         {
             accept =
-                AcceptChoice(
+                ConsoleProgramHelper.AcceptChoice(
                     $"Using {quantity.Name} with abbreviation {quantity.UserFields["abbreviation"]} for the bought amount {boughtProduct.ProductAmount}, acccept? (Y/n): ");
 
             if (!accept)
@@ -175,22 +152,13 @@ public class BoughtProductsProcessor
 
         var boughtAmount = boughtProduct.NbrOfProducts * packageAmount;
 
-        var accept = AcceptChoice($"Calculated bought amount to be added to {boughtAmount}, for the {boughtProduct.ProductAmount} per pack, and {boughtProduct.NbrOfProducts} nbr. Is that correct (Y/n)?: ");
+        var accept = ConsoleProgramHelper.AcceptChoice($"Calculated bought amount to be added to {boughtAmount}, for the {boughtProduct.ProductAmount} per pack, and {boughtProduct.NbrOfProducts} nbr. Is that correct (Y/n)?: ");
         if (!accept)
         {
             throw new NotImplementedException();
         }
 
         return boughtAmount;
-    }
-
-    private static bool AcceptChoice(string info)
-    {
-        System.Console.Write(info);
-        var userAnser = System.Console.ReadLine()?.ToLower().Trim();
-
-        var accept = string.IsNullOrWhiteSpace(userAnser) || userAnser == "y";
-        return accept;
     }
 
     private async Task<double> ConvertAmountToUnit(Product product, QuantityUnit unit, double amountToAdd)
@@ -212,7 +180,7 @@ public class BoughtProductsProcessor
         }
 
         var accept =
-            AcceptChoice(
+            ConsoleProgramHelper.AcceptChoice(
                 $"Product unit and bought unit doesn't match. Convert from {amountToAdd}, {unit.Name} bought to {convertedAmount}, to add. Do you accept (Y/n)?: ");
         if (!accept)
             throw new NotImplementedException();
