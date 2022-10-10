@@ -59,9 +59,9 @@ var addPermanently = Console.ReadLine()?.ToLower().Trim() != "n";
 
 var processor = new BoughtProductsProcessor(url, http, log);
 
-await processor.Process(boughtProducts, addPermanently);
+await processor.Process(boughtProducts, addPermanently, 1);
 
-void ProcessEmails(IReadOnlyList<Email> emails)
+void ProcessEmails(IEnumerable<Email> emails)
 {
     foreach (var orderEmail in emails.Where(x => x.Title == "Orderbekräftelse"))
     {

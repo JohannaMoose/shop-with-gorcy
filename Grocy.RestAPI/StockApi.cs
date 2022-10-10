@@ -1,9 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Grocy.RestAPI.Json;
-using Grocy.RestAPI.Models;
+﻿using Grocy.RestAPI.Models;
 using Grocy.RestAPI.VMs;
 using Newtonsoft.Json;
 
@@ -42,8 +37,7 @@ public class StockApi : GrocyApiBase<StockEntry>
         string? note = default)
     {
         var vm = new ProductChangeAmount(amount, transactionType.ToApiString(), price, bestBeforeDate, locationId,
-            shoppingLocationId,
-            stockLabelType, note);
+            shoppingLocationId, stockLabelType, note);
 
         var result = await PostToGrocy($"{ApiBase}/{productId}/add", vm);
 

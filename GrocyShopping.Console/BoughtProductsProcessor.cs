@@ -9,35 +9,28 @@ namespace GrocyShopping.Console;
 public class BoughtProductsProcessor
 {
     private readonly ILogger _logger;
-    private QuantityUnitsApi unitsApi;
     private ProductsApi productsApi;
-    private QuantityConversionApi quantityConversionApi;
     private StockApi stockApi;
     private QuantityManager _quantityManager;
 
     public BoughtProductsProcessor(string grocyUrl, HttpClient client, ILogger logger)
     {
         _logger = logger;
-        unitsApi = new QuantityUnitsApi(client, grocyUrl);
         productsApi = new ProductsApi(client, grocyUrl);
-        quantityConversionApi = new QuantityConversionApi(client, grocyUrl);
         stockApi = new StockApi(client, grocyUrl);
-        _quantityManager = new QuantityManager(unitsApi, _logger);
+        _quantityManager = new QuantityManager(new QuantityUnitsApi(client, grocyUrl), new QuantityConversionApi(client, grocyUrl),  _logger);
     }
 
-    public async Task Process(IEnumerable<BoughtProduct> boughtProducts, bool addPermanently, string storeId)
+    public async Task Process(IEnumerable<BoughtProduct> boughtProducts, bool addPermanently, int storeId)
     {
-        var allUnits = await unitsApi.Get();
-        var unitAbbreviations = allUnits.Select(x => x.UserFields["abbreviation"]);
-
         foreach (var boughtProduct in boughtProducts)
         {
             _logger.Information("Processes product {productName} from {brand}, bought {amount}, {productAmount} for {price}", boughtProduct.Name, boughtProduct.Brand, boughtProduct.ProductAmount, boughtProduct.ProductAmount, boughtProduct.Price);
 
-            var unit = GetQuantityUnit(unitAbbreviations, boughtProduct, allUnits);
+            var unit = GetQuantityUnit(boughtProduct);
             var product = await ProcessProduct(boughtProduct, unit);
             var details = await stockApi.GetProduct(product.Id);
-            await AddBoughtAmountOfProduct(boughtProduct, unit, product);
+            await AddBoughtAmountOfProduct(boughtProduct, unit, product, storeId);
 
             if (!addPermanently)
             {
@@ -85,7 +78,7 @@ public class BoughtProductsProcessor
 
         System.Console.Write("Accept this choice? (Y/n)");
         var userInput = System.Console.ReadLine()?.ToLower().Trim();
-        var accept = userInput != null && userInput == "y" || string.IsNullOrWhiteSpace(userInput);
+        var accept = userInput is "y" || string.IsNullOrWhiteSpace(userInput);
 
         if (accept)
             return product;
@@ -95,7 +88,7 @@ public class BoughtProductsProcessor
         }
     }
 
-    private async Task AddBoughtAmountOfProduct(BoughtProduct boughtProduct, QuantityUnit unit, Product product)
+    private async Task AddBoughtAmountOfProduct(BoughtProduct boughtProduct, QuantityUnit unit, Product product, int storeId)
     {
         var amountToAdd = AmountToAdd(boughtProduct);
 
@@ -109,19 +102,25 @@ public class BoughtProductsProcessor
         if (!acceptPrice)
             throw new NotImplementedException();
 
-        await stockApi.AddAmount(product.Id, amountToAdd, pricePerUnit);
+        await stockApi.AddAmount(product.Id, amountToAdd, pricePerUnit, shoppingLocationId: storeId);
     }
     private async Task<Product> AddProduct(BoughtProduct boughtProduct1, QuantityUnit quantityUnit)
     {
         var name = boughtProduct1.Name;
 
-        var accepted = AcceptChoice($"Product name in grocy for new product suggested {name}, ");
+        var accepted = AcceptChoice($"Product name in grocy for new product suggested \"{name}\", accept (Y/n)?: ");
         if (!accepted)
         {
             System.Console.Write("Please enter product name to use: ");
             System.Console.WriteLine(name);
             System.Console.SetCursorPosition(name.Length, 0);
             name = System.Console.ReadLine();
+        }
+
+        accepted = AcceptChoice($"From bought product, unit {quantityUnit.Name} selected, accept (Y/n)?: ");
+        if (!accepted)
+        {
+            quantityUnit = _quantityManager.UserSelectQuantity();
         }
 
         var product1 = await productsApi.AddProduct(name, quantityUnit.Id, quantityUnit.Id);
@@ -131,43 +130,27 @@ public class BoughtProductsProcessor
         return product1;
     }
 
-    private QuantityUnit GetQuantityUnit(IEnumerable<string> allAbbreviations, BoughtProduct boughtProduct, IEnumerable<QuantityUnit> quantityUnits)
+    private QuantityUnit GetQuantityUnit(BoughtProduct boughtProduct)
     {
-        var amountStr = boughtProduct.ProductAmount; 
+        var quantity = _quantityManager.GetUnitFor(boughtProduct.ProductAmount);
 
-        if (boughtProduct.ProductAmount.EndsWith(")"))
-        {
-            var parts = Regex.Match(amountStr, @"(\d*.*) \(.*\)");
-            amountStr = parts.Groups[1].Value;
-        }
-
-        var matchingAbrev = allAbbreviations.Where(x => amountStr.EndsWith(x)).OrderByDescending(x => x.Length);
-        var abrv = matchingAbrev.First();
-        var unit1 = GetQuantityWithAbbreviation(quantityUnits, abrv);
         var accept = false;
         while (!accept)
         {
             accept =
                 AcceptChoice(
-                    $"Using {unit1.Name} with abbreviation {abrv} for the bought amount {boughtProduct.ProductAmount}, acccept? (Y/n): ");
+                    $"Using {quantity.Name} with abbreviation {quantity.UserFields["abbreviation"]} for the bought amount {boughtProduct.ProductAmount}, acccept? (Y/n): ");
 
             if (!accept)
             {
-                System.Console.WriteLine("Please write what abbreviation to use: ");
-                var userAbbrev = System.Console.ReadLine();
-                unit1 = GetQuantityWithAbbreviation(quantityUnits, userAbbrev);
+                quantity = _quantityManager.UserSelectQuantity();
             }
         }
 
-        return unit1;
+        return quantity;
     }
 
-    private static QuantityUnit GetQuantityWithAbbreviation(IEnumerable<QuantityUnit> quantityUnits, string abrv)
-    {
-        var unit1 = quantityUnits.Single(x => x.UserFields["abbreviation"] == abrv);
-        return unit1;
-    }
-
+   
     private static double AmountToAdd(BoughtProduct boughtProduct)
     {
         double packageAmount;
@@ -213,17 +196,15 @@ public class BoughtProductsProcessor
     private async Task<double> ConvertAmountToUnit(Product product, QuantityUnit unit, double amountToAdd)
     {
         var convertedAmount = amountToAdd;
-        var foundConversions = await quantityConversionApi.Get(new[]
-        {
-            new QueryFilter("product_id", QueryCondition.Equals, product.Id.ToString()),
-            new QueryFilter("from_qu_id", QueryCondition.Equals, unit.Id.ToString())
-        });
+        var converter = await _quantityManager.GetConversion(unit.Id, product.Qu_id_stock, product.Id);
 
-        var quantityUnitConversions = foundConversions as QuantityUnitConversion[] ?? foundConversions.ToArray();
-        var converter = quantityUnitConversions.FirstOrDefault();
+        if(converter == null)
+            converter = await _quantityManager.GetConversion(unit.Id, product.Qu_id_stock);
+
+
         if (converter != null)
         {
-            convertedAmount *= Convert.ToDouble(converter.Factor);
+            convertedAmount *= converter.Factor;
         }
         else
         {
@@ -232,7 +213,7 @@ public class BoughtProductsProcessor
 
         var accept =
             AcceptChoice(
-                $"Product unit and bought unit doesn't match. Convert from {amountToAdd}, {unit.Name} bought to {convertedAmount}, to add");
+                $"Product unit and bought unit doesn't match. Convert from {amountToAdd}, {unit.Name} bought to {convertedAmount}, to add. Do you accept (Y/n)?: ");
         if (!accept)
             throw new NotImplementedException();
 

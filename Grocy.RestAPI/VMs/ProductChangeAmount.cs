@@ -1,6 +1,6 @@
 ﻿namespace Grocy.RestAPI.VMs;
 
-internal record ProductChangeAmount(double amount, string transaction_type, double price, DateTime? best_before_date, int? location_id, int? shopping_location_id, int? stock_label_type, string? note);
+internal record ProductChangeAmount(double Amount, string TransactionType, double Price, DateTime? BestBeforeDate, int? LocationId, int? ShoppingLocationId, int? StockLabelType, string? Note);
 
 public enum StockTransactionType
 {

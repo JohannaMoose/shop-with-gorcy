@@ -58,6 +58,7 @@ public abstract class GrocyApiBase<T>
             PropertyNamingPolicy = new JsonLowercaseUnderscorePolicy(),
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         });
+
         var url = ConstructGrocyUrl(uniqUrlPart);
 
         try
