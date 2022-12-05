@@ -33,7 +33,7 @@ internal class QuantityManager
         }
     }
 
-    private IEnumerable<string> AllAbbreviations => QuantityUnits.Select(x => x.UserFields["abbreviation"]);
+    private IEnumerable<string> AllAbbreviations => QuantityUnits.Select(x => x.Userfields["abbreviation"]);
 
     public QuantityUnit GetUnitFor(string unitString)
     {
@@ -47,7 +47,7 @@ internal class QuantityManager
 
         var matchingAbrev = AllAbbreviations.Where(x => amountStr.EndsWith(x)).OrderByDescending(x => x.Length);
         var abrv = matchingAbrev.First();
-        var unit1 = QuantityUnits.Single(x => x.UserFields["abbreviation"] == abrv);
+        var unit1 = QuantityUnits.Single(x => x.Userfields["abbreviation"] == abrv);
 
         _logger.Debug("Using {unit} with abbreviation {abbreviation} for amount found in {amount}", unit1.Name, abrv, unitString);
 
@@ -56,7 +56,7 @@ internal class QuantityManager
 
     public QuantityUnit UserSelectQuantity()
     {
-        System.Console.WriteLine("Please write what abbreviation to use: ");
+        System.Console.Write("Please write what abbreviation to use: ");
         QuantityUnit? result = null;
 
         while (result == null)
@@ -73,7 +73,7 @@ internal class QuantityManager
 
     public QuantityUnit? GetQuantityWithAbbreviation(string abrv)
     {
-        var unit1 = QuantityUnits.SingleOrDefault(x => x.UserFields["abbreviation"] == abrv);
+        var unit1 = QuantityUnits.SingleOrDefault(x => x.Userfields["abbreviation"] == abrv);
         return unit1;
     }
 

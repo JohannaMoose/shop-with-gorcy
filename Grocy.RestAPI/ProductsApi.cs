@@ -68,6 +68,15 @@ public class ProductsApi : GrocyApiBase<Product>
         }
     }
 
+    public async Task<string> GetUserfiled(int productId, string filedName)
+    {
+        var json = await GetUserfields(productId);
+        dynamic jsonObj = JsonConvert.DeserializeObject(json);
+        var val = jsonObj[filedName];
+
+        return val.ToString();
+    }
+
     private async Task<StringContent> UpdateFieldInJson(int productId, string name, string newValue)
     {
         var json = await GetUserfields(productId);

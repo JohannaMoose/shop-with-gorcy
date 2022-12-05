@@ -1,9 +1,9 @@
 ﻿using Grocy.RestAPI.Json;
-using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Net;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Grocy.RestAPI;
 
@@ -51,13 +51,16 @@ public abstract class GrocyApiBase<T>
         return HttpClient.GetAsync(url);
     }
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = new JsonLowercaseUnderscorePolicy(),
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
+    };
+
     protected async Task<HttpResponseMessage> PostToGrocy<TIn>(string uniqUrlPart, TIn objToJson)
     {
-        var jsonBody = JsonContent.Create(objToJson, null, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = new JsonLowercaseUnderscorePolicy(),
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        });
+        var jsonBody = JsonContent.Create(objToJson, null, JsonOptions);
 
         var url = ConstructGrocyUrl(uniqUrlPart);
 
@@ -111,7 +114,7 @@ public abstract class GrocyApiBase<T>
     private static async Task<IEnumerable<T>> ParsedResponse(HttpResponseMessage response)
     {
         var json = await response.Content.ReadAsStringAsync();
-        var parsedResponse = JsonConvert.DeserializeObject<IEnumerable<T>>(json);
+        var parsedResponse = JsonSerializer.Deserialize<IEnumerable<T>>(json, JsonOptions);
         return parsedResponse;
     }
 }
