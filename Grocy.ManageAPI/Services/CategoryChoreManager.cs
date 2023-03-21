@@ -7,14 +7,10 @@ public class CategoryChoreManager
 {
     private readonly ChoesApi _choresApi;
     private IEnumerable<Chore> _allChores;
-    private readonly string _priorityName;
-    private readonly string _priorityValue;
 
-    public CategoryChoreManager(ChoesApi choresApi, string priorityName, string priorityValue)
+    public CategoryChoreManager(ChoesApi choresApi)
     {
         _choresApi = choresApi;
-        _priorityName = priorityName;
-        _priorityValue = priorityValue;
         var load = LoadChores();
         load.Wait();
     }
@@ -45,32 +41,32 @@ public class CategoryChoreManager
 
         if (!priorityChores.Any())
         {
-            System.Console.WriteLine("No priority chores to handle");
-            System.Console.WriteLine("Keeping some none priority to fill slots, rescheduling rest");
+            Console.WriteLine("No priority chores to handle");
+            Console.WriteLine("Keeping some none priority to fill slots, rescheduling rest");
             await Reschedule(nonePriority.Skip(nbrOfChoresInCategoryToHave), choresInCategory, nbrOfChoresInCategoryToHave);
         }
         else if (priorityChores.Count > nbrOfChoresInCategoryToHave)
         {
-            System.Console.WriteLine(
+            Console.WriteLine(
                 "Too many priority chores to handle, will have to reschedule some along with all none priority");
             await Reschedule(priorityChores.Skip(nbrOfChoresInCategoryToHave).Concat(nonePriority), choresInCategory, nbrOfChoresInCategoryToHave);
         }
         else
         {
-            System.Console.Write("Correct number, or less, of priority, will keep it as is: ");
+            Console.Write("Correct number, or less, of priority, will keep it as is: ");
             foreach (var chore in priorityChores)
             {
-                System.Console.WriteLine(chore.Name);
+                Console.WriteLine(chore.Name);
             }
 
             if (nonePriority.Count + priorityChores.Count > nbrOfChoresInCategoryToHave)
             {
-                System.Console.WriteLine("Too many chores in total, will have to reschedule some none priority");
+                Console.WriteLine("Too many chores in total, will have to reschedule some none priority");
                 await Reschedule(nonePriority.Skip(nbrOfChoresInCategoryToHave - priorityChores.Count), choresInCategory, nbrOfChoresInCategoryToHave);
             }
             else
             {
-                System.Console.WriteLine("Correct number, or less, of none priority, will keep it as is");
+                Console.WriteLine("Correct number, or less, of none priority, will keep it as is");
             }
         }
     }
@@ -91,7 +87,7 @@ public class CategoryChoreManager
             var forSameDate = allChoresInCategory.Where(x => x.NextEstimatedExecutionTime.Date == rescheduleTo.Date).ToList();
             if (forSameDate.Any())
             {
-                if (forSameDate.All(x => x.Userfields[_priorityName] != _priorityValue))
+                if (forSameDate.All(x => !x.IsPriority))
                 {
                    
                     toAlsoReschedule.AddRange(forSameDate);
@@ -99,7 +95,7 @@ public class CategoryChoreManager
             }
             else
             {
-                System.Console.WriteLine($"Rescheduling {chore.Name} to {rescheduleTo}");
+                Console.WriteLine($"Rescheduling {chore.Name} to {rescheduleTo}");
                 await _choresApi.RescheduleChore(chore.Id, rescheduleTo);
             }
 
@@ -109,7 +105,7 @@ public class CategoryChoreManager
 
         if (toAlsoReschedule.Any())
         {
-            System.Console.WriteLine("Need to reschedule other chores as well");
+            Console.WriteLine("Need to reschedule other chores as well");
             await Reschedule(toAlsoReschedule, allChoresInCategory, nbrOfChoresInCategoryToHave, rescheduleTo);
         }
     }
