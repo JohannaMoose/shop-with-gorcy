@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Grocy.RestAPI\Grocy.RestAPI.csproj" />
+  </ItemGroup>
+
 </Project>

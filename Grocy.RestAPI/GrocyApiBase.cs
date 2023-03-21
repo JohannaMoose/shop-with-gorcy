@@ -28,7 +28,7 @@ public abstract class GrocyApiBase<T>
 
         if (response.IsSuccessStatusCode)
         {
-            return await ParsedResponse(response);
+            return await ParsedResponse<T>(response);
         }
         else
         {
@@ -85,6 +85,33 @@ public abstract class GrocyApiBase<T>
         }
     }
 
+    protected async Task<HttpResponseMessage> PutToGrocy<TIn>(string uniqUrlPart, TIn objectToJson)
+    {
+        var jsonBody = JsonContent.Create(objectToJson, null, JsonOptions);
+
+        var url = ConstructGrocyUrl(uniqUrlPart);
+
+        try
+        {
+            var msg = new HttpRequestMessage
+            {
+                Method = HttpMethod.Put,
+                RequestUri = new Uri(url),
+                Headers = {
+                    { HttpRequestHeader.Accept.ToString(), "application/json" },
+                    { HttpRequestHeader.ContentType.ToString(), "application/json" }},
+                Content = jsonBody
+            };
+            var result = await HttpClient.SendAsync(msg);
+            return result;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
     protected string ConstructGrocyUrl(string url)
     {
         if (url.StartsWith("/"))
@@ -111,10 +138,10 @@ public abstract class GrocyApiBase<T>
         return url;
     }
 
-    private static async Task<IEnumerable<T>> ParsedResponse(HttpResponseMessage response)
+    protected static async Task<IEnumerable<TE>> ParsedResponse<TE>(HttpResponseMessage response)
     {
         var json = await response.Content.ReadAsStringAsync();
-        var parsedResponse = JsonSerializer.Deserialize<IEnumerable<T>>(json, JsonOptions);
+        var parsedResponse = JsonSerializer.Deserialize<IEnumerable<TE>>(json, JsonOptions);
         return parsedResponse;
     }
 }
