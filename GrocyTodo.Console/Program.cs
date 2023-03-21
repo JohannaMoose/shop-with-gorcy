@@ -20,9 +20,7 @@ http.DefaultRequestHeaders.Add("GROCY-API-KEY", apiKey);
 
 var choresApi = new ChoesApi(http, grocyInstance);
 
-var nameOfCategoryToHandle = "Städning"; 
-var nbrOfChoresInCategoryToHandle = 1;
-
 var manager = new CategoryChoreManager(choresApi, "priority", "1");
-await manager.ScheduleCategory(nameOfCategoryToHandle, nbrOfChoresInCategoryToHandle);
+await manager.ScheduleCategory("Städning", 1);
+await manager.ScheduleCategory("Tvätt", 2);
 

@@ -1,12 +1,12 @@
-﻿using Grocy.RestAPI;
-using Grocy.RestAPI.Models;
+﻿using Grocy.Domain;
+using Grocy.RestAPI;
 
 namespace GrocyTodo.Console;
 
 public class CategoryChoreManager
 {
     private readonly ChoesApi _choresApi;
-    private readonly IEnumerable<Chore> _allChores;
+    private IEnumerable<Chore> _allChores;
     private readonly string _priorityName;
     private readonly string _priorityValue;
 
@@ -15,13 +15,24 @@ public class CategoryChoreManager
         _choresApi = choresApi;
         _priorityName = priorityName;
         _priorityValue = priorityValue;
-        _allChores = choresApi.Get().Result;
+        var load = LoadChores();
+        load.Wait();
+    }
+
+    private async Task LoadChores()
+    {
+        var baseChore = _choresApi.Get();
+        var info = _choresApi.GetChoreInfo();
+
+        await Task.WhenAll(baseChore, info);
+
+        _allChores = baseChore.Result.Select(x => new Chore(info.Result.First(y => y.Id == x.Id), x));
     }
 
     public async Task ScheduleCategory(string categoryName, int nbrOfChoresInCategoryToHave)
     {
         var choresInCategory = _allChores.Where(x => x.Userfields["category"] == categoryName).ToList();
-        var dueChoresInCategory = choresInCategory.Where(x => x.NextDueDate.Date <= DateTime.Today.Date);
+        var dueChoresInCategory = choresInCategory.Where(x => x.NextEstimatedExecutionTime.Date <= DateTime.Today.Date);
 
         await ScheduleChores(nbrOfChoresInCategoryToHave, dueChoresInCategory, choresInCategory);
     }
@@ -29,8 +40,8 @@ public class CategoryChoreManager
     private async Task ScheduleChores(int nbrOfChoresInCategoryToHave, IEnumerable<Chore> dueChoresInCategory,
         IReadOnlyCollection<Chore> choresInCategory)
     {
-        var priorityChores = dueChoresInCategory.Where(x => x.Userfields[_priorityName] == _priorityValue).ToList();
-        var nonePriority = dueChoresInCategory.Where(x => x.Userfields[_priorityName] != _priorityValue).ToList();
+        var priorityChores = dueChoresInCategory.Where(x => x.IsPriority).ToList();
+        var nonePriority = dueChoresInCategory.Where(x => !x.IsPriority).ToList();
 
         if (!priorityChores.Any())
         {
@@ -77,7 +88,7 @@ public class CategoryChoreManager
             if (count % nbrOfChoresInCategoryToHave == 0)
                 rescheduleTo = rescheduleTo.AddDays(1);
 
-            var forSameDate = allChoresInCategory.Where(x => x.NextDueDate.Date == rescheduleTo.Date).ToList();
+            var forSameDate = allChoresInCategory.Where(x => x.NextEstimatedExecutionTime.Date == rescheduleTo.Date).ToList();
             if (forSameDate.Any())
             {
                 if (forSameDate.All(x => x.Userfields[_priorityName] != _priorityValue))
