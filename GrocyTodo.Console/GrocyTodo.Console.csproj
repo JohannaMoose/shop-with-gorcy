@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Grocy.Domain\Grocy.Domain.csproj" />
+    <ProjectReference Include="..\Grocy.ManageAPI\Grocy.ManageAPI.csproj" />
     <ProjectReference Include="..\Grocy.RestAPI\Grocy.RestAPI.csproj" />
   </ItemGroup>
 

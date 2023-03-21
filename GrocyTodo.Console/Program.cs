@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using Grocy.ManageAPI.Services;
 using Grocy.RestAPI;
-using GrocyTodo.Console;
 
 Console.WriteLine("Hello Grocy ToDo World!");
 var grocyInstance = Environment.GetEnvironmentVariable("GROCY_INSTANCE");

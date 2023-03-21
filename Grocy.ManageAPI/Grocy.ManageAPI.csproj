@@ -13,4 +13,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Grocy.Domain\Grocy.Domain.csproj" />
+    <ProjectReference Include="..\Grocy.RestAPI\Grocy.RestAPI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>

@@ -1,7 +1,7 @@
 ﻿using Grocy.Domain;
 using Grocy.RestAPI;
 
-namespace GrocyTodo.Console;
+namespace Grocy.ManageAPI.Services;
 
 public class CategoryChoreManager
 {
