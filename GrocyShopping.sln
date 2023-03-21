@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grocy.Domain", "Grocy.Domai
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Grocy.ManageAPI", "Grocy.ManageAPI\Grocy.ManageAPI.csproj", "{BF3368EC-6FF5-4C30-8F1C-E0B9E2455305}"
 EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{69737A15-E2F2-4F23-8087-9AEEED2B5D83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{BF3368EC-6FF5-4C30-8F1C-E0B9E2455305}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF3368EC-6FF5-4C30-8F1C-E0B9E2455305}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF3368EC-6FF5-4C30-8F1C-E0B9E2455305}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69737A15-E2F2-4F23-8087-9AEEED2B5D83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69737A15-E2F2-4F23-8087-9AEEED2B5D83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69737A15-E2F2-4F23-8087-9AEEED2B5D83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69737A15-E2F2-4F23-8087-9AEEED2B5D83}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

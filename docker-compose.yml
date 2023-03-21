@@ -1,0 +1,9 @@
+version: '3.4'
+
+services:
+  grocy.manageapi:
+    image: ${DOCKER_REGISTRY-}grocymanageapi
+    build:
+      context: .
+      dockerfile: Grocy.ManageAPI/Dockerfile
+      
